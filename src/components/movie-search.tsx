@@ -8,6 +8,9 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
+const TMDB_API_KEY = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI5MjFkZjFlM2Q4ZjI5YzA3NzUxN2Q5MjE5ZmQ0NzRkMyIsIm5iZiI6MTczMDA2NzI5MC4yNTc4NzYsInN1YiI6IjY3MWI0MjQzZDQ3ZGU0Y2E3YzNjZDk5YSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.WXkIq7i_E1p2HpR2tS_A7yT2Zi3tVQIq3jTbL1V5A3M'
+const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
+
 interface MovieResult {
   id: number
   title: string
@@ -20,13 +23,6 @@ interface MovieResult {
   voteCount: number
   mediaType: 'movie' | 'tv'
   genreIds: number[]
-}
-
-interface SearchResponse {
-  results: MovieResult[]
-  page: number
-  totalPages: number
-  totalResults: number
 }
 
 export function MovieSearch() {
@@ -48,14 +44,31 @@ export function MovieSearch() {
     setError(null)
 
     try {
-      const response = await fetch(`/api/search?query=${encodeURIComponent(searchQuery)}`)
+      const response = await fetch(
+        `${TMDB_BASE_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(searchQuery)}&language=ru-RU`
+      )
       
       if (!response.ok) {
         throw new Error('Search failed')
       }
 
-      const data: SearchResponse = await response.json()
-      setResults(data.results)
+      const data = await response.json()
+      
+      const transformedResults = data.results.map((item: any) => ({
+        id: item.id,
+        title: item.title || item.name,
+        originalTitle: item.original_title || item.original_name,
+        overview: item.overview,
+        posterPath: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
+        backdropPath: item.backdrop_path ? `https://image.tmdb.org/t/p/w1280${item.backdrop_path}` : null,
+        releaseDate: item.release_date || item.first_air_date,
+        voteAverage: item.vote_average,
+        voteCount: item.vote_count,
+        mediaType: item.media_type,
+        genreIds: item.genre_ids,
+      }))
+
+      setResults(transformedResults)
       setHasSearched(true)
     } catch (err) {
       setError('Не удалось выполнить поиск. Попробуйте еще раз.')

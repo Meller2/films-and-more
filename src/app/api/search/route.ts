@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const TMDB_API_KEY = process.env.TMDB_API_KEY || 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI5MjFkZjFlM2Q4ZjI5YzA3NzUxN2Q5MjE5ZmQ0NzRkMyIsIm5iZiI6MTczMDA2NzI5MC4yNTc4NzYsInN1YiI6IjY3MWI0MjQzZDQ3ZGU0Y2E3YzNjZDk5YSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.WXkIq7i_E1p2HpR2tS_A7yT2Zi3tVQIq3jTbL1V5A3M'
+const TMDB_API_KEY = 'eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiI4NjAyZGQwZmY1MGJkMzNjZTUyNjc3ODM4NmM4NzBmMCIsIm5iZiI6MTc1ODgyODMxMi4wNzcsInN1YiI6IjY4ZDU5NzE4MjM1MTgyYjIwYWM0ODAwYSIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.BFriK7F5jY1MpM4Dn60tXiK8HSqJpsOwIVlbuV2B7E4'
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3'
 
 export async function GET(request: NextRequest) {
@@ -16,19 +16,22 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Search for movies
+    // Search for movies using Bearer token
     const searchResponse = await fetch(
-      `${TMDB_BASE_URL}/search/multi?api_key=${TMDB_API_KEY}&query=${encodeURIComponent(query)}&page=${page}&language=ru-RU`,
+      `${TMDB_BASE_URL}/search/multi?query=${encodeURIComponent(query)}&page=${page}&language=ru-RU`,
       {
         method: 'GET',
         headers: {
+          'Authorization': `Bearer ${TMDB_API_KEY}`,
           'Content-Type': 'application/json',
         },
       }
     )
 
     if (!searchResponse.ok) {
-      throw new Error('TMDB API request failed')
+      const errorText = await searchResponse.text()
+      console.error('TMDB API Error:', errorText)
+      throw new Error(`TMDB API request failed: ${searchResponse.status}`)
     }
 
     const data = await searchResponse.json()
